@@ -1,23 +1,51 @@
-/******************************************************************************
-
-Welcome to GDB Online.
-GDB online is an online compiler and debugger tool for C, C++, Python, Java, PHP, Ruby, Perl,
-C#, VB, Swift, Pascal, Fortran, Haskell, Objective-C, Assembly, HTML, CSS, JS, SQLite, Prolog.
-Code, Compile, Run and Debug online from anywhere in world.
-
-*******************************************************************************/
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
+#include <queue> // FIFO, pilas son LIFO
 
-void* task1(void* ptr){
-    sleep(3);
-    std::cout << "hello from task 1" << std::endl;
+#define MAX_QUEUE_SIZE    10
+// producer-consumer problem
+// race conditions
+// dos threads accediendo y/o modificando un recurso compartido int flag, queue, list 
+
+std::queue<int> myQueue;
+
+void* producer(void* ptr) {
+    usleep(100000);
+    pthread_t thread = pthread_self();
+    char threadName[16];
+    pthread_getname_np(thread, threadName, sizeof(threadName));
+    std::cout << "Hello from " << std::string(threadName) << " with tid: " 
+              << "0x" << std::hex << thread <<std::endl;
+              
+    // aqui comienza el trabajo real del thread
+    int randomNumber = 0;
+    while (myQueue.size() < MAX_QUEUE_SIZE) {
+        randomNumber = rand() % 100;
+        std::cout << "Generated random number is: " << randomNumber << std::endl;
+        myQueue.push(randomNumber);
+    }
     return NULL;
 }
 
-void* task2(void* ptr){
-    std::cout << "hello from task 2" << std::endl;
+void* consumer(void* ptr) {
+    usleep(100000);
+    pthread_t thread = pthread_self();
+    char threadName[16];
+    pthread_getname_np(thread, threadName, sizeof(threadName));
+    std::cout << "Hello from " << std::string(threadName) << " with tid: " 
+              << "0x" << std::hex << thread << std::endl;
+    
+    // Extraer datos de la cola myQueue     
+    int data = 0;
+    while (!myQueue.empty()) {
+        data = myQueue.front();
+        myQueue.pop();
+        std::cout << "Printing data: " << data 
+                  <<  " now the size of the queue is: " << myQueue.size() << std::endl;
+    }
+    // la cola esta vacia
+    std::cout << "Queue empty, goodbye " << std::endl;
     return NULL;
 }
 
@@ -27,16 +55,17 @@ int main() {
     pthread_t thread1;
     pthread_t thread2;
     
+    // ejecutamos los threads
+    pthread_create(&thread1, NULL, &producer, NULL);// este esta corriendo
+    pthread_create(&thread2, NULL, &consumer, NULL);
     
-    // ejecutamos los trheads
-    pthread_create(&thread1, NULL, &task1, NULL);
-    pthread_create(&thread2, NULL, &task2, NULL);
+    // nombramos los threads
+    pthread_setname_np(thread1, "Producer thread"); /// task1 ya acabo
+    pthread_setname_np(thread2, "Consumer thread");
     
     // esperamos a que los trheads terminen
     pthread_join(thread1, NULL);
     pthread_join(thread2, NULL);
     
-    // task1();  // secuencial primero se eejecuta esto, 10 segundos
-    //tast2();  // se va a ejecutar 10 segundos
     return 0;
 }

@@ -20,6 +20,33 @@ void* stop_producer(void* ptr) {
     stop = true;
 }
 
+void drainQueue() {
+    // Extraer datos de la cola myQueue     
+    int data = 0;
+    while (!myQueue.empty()) { // para asegurar que se consuman todos los datos despues del stop
+        sem_wait(&semaphore_full);        // Stay here if the buffer is empty
+        sem_wait(&semaphore_mutex);
+        data = myQueue.front();           // Obtiene el elemento "mas viejo" de la cola FIFO
+        myQueue.pop();                    // Remueve el elemento "mas viejo" de la cola
+        std::cout << "CONSUMER: Printing data: " << data 
+                        <<  " now the size of the queue is: " << myQueue.size() << std::endl;
+        sem_post(&semaphore_mutex);
+        sem_post(&semaphore_empty);        // Incrementa el valor de este semaforo
+    }
+}
+
+void postMessage() {
+    int randomNumber = 0;
+    randomNumber = rand() % 100;    // genera un numero entero aleatorio entre 0 y 100
+    sem_wait(&semaphore_empty);     // stay here if the buffer is full, sem = 0, inicialmente vale 10 -> 9
+    sem_wait(&semaphore_mutex); 
+    myQueue.push(randomNumber);     // Introduce el numero aleatorio generado a la cola
+    std::cout << "PRODUCER: Generated random number is: " << randomNumber
+                << " now the queue size is: " << myQueue.size() << std::endl;
+    sem_post(&semaphore_mutex); 
+    sem_post(&semaphore_full);      // increment the buffer counter for this semaphore
+}
+
 void* producer(void* ptr) {
     sleep(2);
     pthread_t thread = pthread_self();
@@ -28,19 +55,12 @@ void* producer(void* ptr) {
     std::cout << "Hello from " << std::string(threadName) << " with tid: " 
               << "0x" << std::hex << thread <<std::endl;
               
-    // aqui comienza el trabajo real del thread
-    int randomNumber = 0;
     while (!stop) {
-        randomNumber = rand() % 100;    // genera un numero entero aleatorio entre 0 y 100
-        sem_wait(&semaphore_empty);     // stay here if the buffer is full, sem = 0, inicialmente vale 10 -> 9
-        sem_wait(&semaphore_mutex); 
-        myQueue.push(randomNumber);     // Introduce el numero aleatorio generado a la cola
-        std::cout << "PRODUCER: Generated random number is: " << randomNumber
-                  << " now the queue size is: " << myQueue.size() << std::endl;
-        sem_post(&semaphore_mutex); 
-        sem_post(&semaphore_full);      // increment the buffer counter for this semaphore
+        postMessage();
     }
-    //sem_post(&semaphore_mutex);
+    // Consume any leftover messages
+    drainQueue();
+
     return NULL;
 }
 
@@ -51,23 +71,9 @@ void* consumer(void* ptr) {
     pthread_getname_np(thread, threadName, sizeof(threadName));
     std::cout << "CONSUMER: Hello from " << std::string(threadName) << " with tid: " 
               << "0x" << std::hex << thread << std::endl;
-    
-    // Extraer datos de la cola myQueue     
-    int data = 0;
     while (!stop) {
-        while (!myQueue.empty()) { // para asegurar que se consuman todos los datos despues del stop
-            sem_wait(&semaphore_full);        // Stay here if the buffer is empty
-            sem_wait(&semaphore_mutex);
-            data = myQueue.front();           // Obtiene el elemento "mas viejo" de la cola FIFO
-            myQueue.pop();                    // Remueve el elemento "mas viejo" de la cola
-            std::cout << "CONSUMER: Printing data: " << data 
-                          <<  " now the size of the queue is: " << myQueue.size() << std::endl;
-            sem_post(&semaphore_mutex);
-            sem_post(&semaphore_empty);        // Incrementa el valor de este semaforo
-        }
-        // aqui se quedo consumidor
+        drainQueue();
     }
-    // la cola esta vacia
     std::cout << "CONSUMER: Queue empty, goodbye " << std::endl;
     return NULL;
 }

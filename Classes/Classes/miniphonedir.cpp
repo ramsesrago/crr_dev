@@ -16,21 +16,23 @@ private:
 
     string phone_number; 
 
-    /*Method*/ 
+    /*Methods*/ 
 
 public: 
 
     void set_name(string name_temp); 
 
     string get_name(); 
-
-    
-
-     
-
 }; 
 
-  
+
+
+UserData* new_node()
+{   
+    
+     UserData *ptr = new UserData();
+     return ptr;
+    }  
 
 void UserData::set_name(string name_temp) 
 
@@ -58,6 +60,7 @@ int main(void)
 
     int option; 
 
+    UserData *ptr_node;
     string name; 
 
     do { 
@@ -79,7 +82,7 @@ int main(void)
         { 
 
         case 1:  
-
+            ptr_node = new_node();
             system("cls"); 
 
             UserData User_New; 

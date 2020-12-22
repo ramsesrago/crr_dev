@@ -1,9 +1,5 @@
 #include<iostream> 
 
-using namespace std; 
-
-  
-
 class UserData { 
 
 private: 
@@ -25,8 +21,6 @@ public:
     string get_name(); 
 }; 
 
-
-
 UserData* new_node()
 {   
     
@@ -42,8 +36,6 @@ void UserData::set_name(string name_temp)
 
 } 
 
-  
-
 string UserData::get_name() 
 
 { 
@@ -52,49 +44,48 @@ string UserData::get_name()
 
 } 
 
-  
+void UserData::set_last_name(string name_temp) 
+
+{ 
+
+    last_name = name_temp; 
+
+} 
+
+string UserData::get_name() 
+{
+    return name; 
+} 
 
 int main(void) 
 
 { 
 
-    int option; 
+    int option=0; 
 
     UserData *ptr_node;
     string name; 
 
     do { 
 
-        cout << "Directorio Telefonico\n"; 
-
-        cout << "Seleccione una opcion:\n\n"; 
-
-        cout << "1. Agregar Nuevo\n\n"; 
-
-        cout << "Seleccione:"; 
-
-        cin >> option; 
+        std::cout << "Directorio Telefonico\n"; 
+        std::cout << "Seleccione una opcion:\n\n";
+        std::cout << "1. Agregar Nuevo\n\n"; 
+        std::cout << "Seleccione:"; 
+        std::cin >> option; 
 
   
-
         switch (option) 
-
         { 
 
         case 1:  
             ptr_node = new_node();
             system("cls"); 
-
-            UserData User_New; 
-
+            UserData user_new;
             cout << "Nombre:"; 
-
             cin >> name; 
-
             User_New.set_name(name); 
-
             cout << User_New.get_name(); 
-
             system("pause"); 
 
         } 

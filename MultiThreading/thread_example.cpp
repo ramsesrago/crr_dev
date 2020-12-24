@@ -1,23 +1,30 @@
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
-#include <queue> // FIFO, pilas son LIFO
+#include <queue>
 #include <semaphore.h>
 
-#define MAX_QUEUE_SIZE    10
-// producer-consumer problem
-// race conditions
-// dos threads accediendo y/o modificando un recurso compartido int flag, queue, list 
+#define MAX_QUEUE_SIZE    20
 
 std::queue<int> myQueue;
 sem_t semaphore_full;
 sem_t semaphore_empty;
 sem_t semaphore_mutex;
-bool stop = false;
+bool stop_consumer_flag = false;
+bool stop_producer_flag = false;
+
+void set_thread_name() {
+    pthread_t thread = pthread_self();
+    char threadName[16];
+    pthread_getname_np(thread, threadName, sizeof(threadName));
+    std::cout << "Hello from " << std::string(threadName) << " with tid: " 
+              << "0x" << std::hex << thread <<std::endl;
+}
 
 void* stop_producer(void* ptr) {
-    sleep(4);
-    stop = true;
+    sleep(3);
+    stop_producer_flag = true;
+    return NULL;
 }
 
 void drainQueue() {
@@ -48,30 +55,21 @@ void postMessage() {
 }
 
 void* producer(void* ptr) {
-    sleep(2);
-    pthread_t thread = pthread_self();
-    char threadName[16];
-    pthread_getname_np(thread, threadName, sizeof(threadName));
-    std::cout << "Hello from " << std::string(threadName) << " with tid: " 
-              << "0x" << std::hex << thread <<std::endl;
-              
-    while (!stop) {
+    set_thread_name();
+
+    while (!stop_producer_flag) {
         postMessage();
     }
     // Consume any leftover messages
-    drainQueue();
-
+    stop_consumer_flag = true;
+    std::cout << "PRODUCER: Stopped producing items " << std::endl;
     return NULL;
 }
 
 void* consumer(void* ptr) {
-    sleep(1);
-    pthread_t thread = pthread_self();
-    char threadName[16];
-    pthread_getname_np(thread, threadName, sizeof(threadName));
-    std::cout << "CONSUMER: Hello from " << std::string(threadName) << " with tid: " 
-              << "0x" << std::hex << thread << std::endl;
-    while (!stop) {
+    set_thread_name();
+
+    while (!stop_consumer_flag) {
         drainQueue();
     }
     std::cout << "CONSUMER: Queue empty, goodbye " << std::endl;
@@ -98,7 +96,7 @@ int main() {
     // nombramos los threads
     pthread_setname_np(thread1, "Producer thread");
     pthread_setname_np(thread2, "Consumer thread");
-    pthread_setname_np(thread2, "Stop producer");
+    pthread_setname_np(thread3, "Stop producer");
     
     // esperamos a que los trheads terminen
     pthread_join(thread1, NULL);

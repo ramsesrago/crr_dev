@@ -1,4 +1,4 @@
-#include "iostream"
+ #include "iostream"
 #include "stdio.h"
 #include "string"
 
@@ -6,6 +6,7 @@ typedef enum {
     SQUARE = 0,
     NXM
 }matrix_type;
+
 
 struct datos_matriz
 {
